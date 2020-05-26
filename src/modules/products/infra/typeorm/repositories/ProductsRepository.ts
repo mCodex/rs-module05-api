@@ -69,9 +69,11 @@ class ProductsRepository implements IProductsRepository {
         throw new AppError('Insufficient product quantity');
       }
 
-      p.quantity -= product.quantity;
+      const updatedProduct = p;
 
-      return p;
+      updatedProduct.quantity -= product.quantity;
+
+      return updatedProduct;
     });
 
     await this.ormRepository.save(updatedProducts);

@@ -30,7 +30,7 @@ export default class CreateOrdersProducts1590429882681
           },
           {
             name: 'quantity',
-            type: 'decimal',
+            type: 'integer',
           },
           {
             name: 'created_at',
