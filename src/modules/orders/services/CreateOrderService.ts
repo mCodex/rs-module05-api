@@ -31,24 +31,38 @@ class CreateOrderService {
   ) {}
 
   public async execute({ customer_id, products }: IRequest): Promise<Order> {
-    const customer = await this.customersRepository.findById(customer_id)
+    const customer = await this.customersRepository.findById(customer_id);
 
-    if(!customer) {
-      throw new AppError('Customer not found')
+    if (!customer) {
+      throw new AppError('Customer not found');
     }
 
-    if(!products || products.length === 0) {
-      throw new AppError('Your order does not contain any product')
+    const productsIds = products.map(p => ({ id: p.id }));
+
+    const productsData = await this.productsRepository.findAllById(productsIds);
+
+    if (productsIds.length !== productsData.length) {
+      throw new AppError('There are one or many invalid products');
     }
 
-    await this.productsRepository.findAllById(products);
+    const productOrderData = productsData.map(pd => {
+      const getProductData = products.find(p => p.id === pd.id);
+
+      return {
+        product_id: pd.id,
+        price: pd.price,
+        quantity: getProductData?.quantity || 0,
+      };
+    });
 
     const order = await this.ordersRepository.create({
       customer,
-      products,
+      products: productOrderData,
     });
 
-    return order
+    await this.productsRepository.updateQuantity(products);
+
+    return order;
   }
 }
 

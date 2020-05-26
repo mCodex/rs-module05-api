@@ -1,8 +1,9 @@
-import { getRepository, Repository, In } from 'typeorm';
+import { getRepository, Repository } from 'typeorm';
 
 import IProductsRepository from '@modules/products/repositories/IProductsRepository';
 import ICreateProductDTO from '@modules/products/dtos/ICreateProductDTO';
 import IUpdateProductsQuantityDTO from '@modules/products/dtos/IUpdateProductsQuantityDTO';
+import AppError from '@shared/errors/AppError';
 import Product from '../entities/Product';
 
 interface IFindProducts {
@@ -22,26 +23,32 @@ class ProductsRepository implements IProductsRepository {
     quantity,
   }: ICreateProductDTO): Promise<Product> {
     const product = this.ormRepository.create({
-      name,price,quantity
-    })
+      name,
+      price,
+      quantity,
+    });
 
-    await this.ormRepository.save(product)
+    await this.ormRepository.save(product);
 
-    return product
+    return product;
   }
 
   public async findByName(name: string): Promise<Product | undefined> {
     const product = await this.ormRepository.findOne({
       where: {
-        name
-      }
-    })
+        name,
+      },
+    });
 
     return product;
   }
 
   public async findAllById(products: IFindProducts[]): Promise<Product[]> {
-    const allProductsById = await this.ormRepository.findByIds(products)
+    const getProductsIds = products.map(p => p.id);
+
+    // const allProductsById = await this.ormRepository.find({id: In(getProductsIds)});
+
+    const allProductsById = await this.ormRepository.findByIds(getProductsIds);
 
     return allProductsById;
   }
@@ -49,7 +56,27 @@ class ProductsRepository implements IProductsRepository {
   public async updateQuantity(
     products: IUpdateProductsQuantityDTO[],
   ): Promise<Product[]> {
+    const productData = await this.findAllById(products);
 
+    const updatedProducts = productData.map(p => {
+      const product = products.find(({ id }) => id === p.id);
+
+      if (!product) {
+        throw new AppError('Product not found');
+      }
+
+      if (p.quantity < product?.quantity) {
+        throw new AppError('Insufficient product quantity');
+      }
+
+      p.quantity -= product.quantity;
+
+      return p;
+    });
+
+    await this.ormRepository.save(updatedProducts);
+
+    return updatedProducts;
   }
 }
 

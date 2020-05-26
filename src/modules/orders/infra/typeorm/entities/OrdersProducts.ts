@@ -6,28 +6,22 @@ import {
   JoinColumn,
   PrimaryGeneratedColumn,
   ManyToOne,
-  ManyToMany,
-  JoinTable,
 } from 'typeorm';
 
 import Order from '@modules/orders/infra/typeorm/entities/Order';
 import Product from '@modules/products/infra/typeorm/entities/Product';
 
-@Entity('order_products')
+@Entity('orders_products')
 class OrdersProducts {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToMany(() => Order, {
-    cascade: true,
-  })
-  @JoinTable()
+  @ManyToOne(() => Order)
+  @JoinColumn({ name: 'order_id' })
   order: Order;
 
-  @ManyToMany(() => Product, {
-    cascade: true,
-  })
-  @JoinTable()
+  @ManyToOne(() => Product)
+  @JoinColumn({ name: 'product_id' })
   product: Product;
 
   @Column()
